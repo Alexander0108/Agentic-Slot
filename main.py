@@ -75,6 +75,14 @@ async def run_agentic_qa(url, task):
         print("[🛠] ЗАПУСК РЕМОНТУ...")
         raw_repaired = bridge.repair_test(generated_code, error_msg, cleaned_html, task)
         repaired_code = extract_code(raw_repaired)
+
+        if "DIAGNOSTIC_FAIL" in raw_repaired:
+            print("\n" + "!"*50)
+            print("🛑 ШІ-АГЕНТ ВИЯВИВ КРИТИЧНУ ПОМИЛКУ:")
+            print(f"Повідомлення: {raw_repaired.strip()}")
+            print("Пояснення: Елемент відсутній в DOM-дереві. ШІ відмовився створювати хибний тест.")
+            print("!"*50)
+            return # Виходимо з функції, не запускаючи зламаний файл
         
         # Показуємо код ТІЛЬКИ для ознайомлення
         print("\n" + "="*50)
@@ -105,5 +113,5 @@ async def run_agentic_qa(url, task):
 
 if __name__ == "__main__":
     target_url = "https://demo.playwright.dev/todomvc/"
-    user_task = "Type 'Go to the gym' in the input field, press Enter, and then verify that the task appeared in the list."
+    user_task = "1. Add task 'Self-Healing'. 2. Try to click a button to submit, but if it's not there, find another way. 3. Verify task exists."
     asyncio.run(run_agentic_qa(target_url, user_task))

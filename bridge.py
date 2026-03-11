@@ -22,6 +22,8 @@ class AgenticBridge:
             7. BEST PRACTICES: Use 'page.locator()' instead of 'page.query_selector()'.
             8. ASYNC RULES: Never 'await' the page.locator() method. Only 'await' actions like .click(), .fill().
             9. FORBIDDEN: Do NOT use 'try' or 'except' inside the test function EXCEPT for the global one for screenshot. Any internal 'try-except' is a failure of your task.
+            10. ANTI-HALLUCINATION: If the requested element (e.g., 'Login' button, 'Cart') is COMPLETELY missing from the HTML, DO NOT generate any Python code. Instead, output ONLY this exact phrase: "DIAGNOSTIC_FAIL: Element missing".
+            11. SELECTORS: Avoid using state classes like '.active', '.selected', or '.hidden' for clicking. Prefer using text content (e.g., text='Active') or attributes like href.
             """
 
     def generate_test(self, html_context, user_task):
@@ -37,25 +39,27 @@ class AgenticBridge:
         return response['response']
     
     def repair_test(self, original_code, error_message, current_html, user_task):
-        repair_prompt = f"""
-            SYSTEM: You are a Hardcore SDET. 
+        # Об'єднуємо системні правила та специфіку ремонту
+        repair_instructions = f"""
+            REPAIR MODE: The previous test failed. 
+            ORIGINAL CODE: {original_code}
+            ERROR MESSAGE: {error_message}
             
-            CRITICAL RULES:
-            1. DO NOT use 'try' or 'except' blocks inside the test function.
-            2. DO NOT comment out 'asyncio.run()'. It MUST be active.
-            3. If the element (Jackpot) is NOT in the HTML, DO NOT try to fix the selector. 
-               Instead, write a code that just says: raise Exception("CRITICAL: Element not found in DOM").
-            4. The script MUST fail (exit code 1) if the element is missing.
-
-            TASK: {user_task}
-            ERROR: {error_message}
-            HTML: {current_html}
-            """
+            ADDITIONAL REPAIR RULES:
+            1. USE THIS EXACT URL: 'https://demo.playwright.dev/todomvc/#/'
+            2. If you see that the element is missing in the provided HTML, use the ANTI-HALLUCINATION rule.
+            3. Fix the selector based on the HTML context provided below.
+            If the specific element mentioned in the task is missing, look for alternative ways to complete the user's goal using the available HTML elements (e.g., using Enter key instead of a button).
+            
+            HTML CONTEXT:
+            {current_html}
+        """
         
         print(f"[*] Запит на самовідновлення до {self.model_name}...")
         response = ollama.generate(
             model=self.model_name,
-            prompt=repair_prompt,
+            system=self.system_prompt, # ТУТ ВАЖЛИВО: Передаємо основні 11 правил
+            prompt=f"Task: {user_task}\n{repair_instructions}",
             options={"temperature": 0.1}
         )
         return response['response']

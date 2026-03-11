@@ -12,14 +12,17 @@ class SlotScraper:
             print(f"[*] Запуск браузера для: {url}")
             browser = await p.chromium.launch(headless=True)
             page = await browser.new_page()
-            
-            # Чекаємо, поки iGaming скрипти відпрацюють
             await page.goto(url, wait_until="networkidle")
             
-            # Беремо весь HTML сторінки
+            # --- НОВИЙ БЛОК: Створюємо видимість елементів ---
+            if "todomvc" in url:
+                await page.fill('input.new-todo', 'Init Task')
+                await page.press('input.new-todo', 'Enter')
+                await asyncio.sleep(1) # Чекаємо появи фільтрів
+            # -----------------------------------------------
+
             raw_html = await page.content()
             await browser.close()
-            
             return self.clean_dom(raw_html)
 
     def clean_dom(self, html):
