@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Playwright
+failure_screenshot.png
+generated_test_result.py
+
+# macOS
+.DS_Store
