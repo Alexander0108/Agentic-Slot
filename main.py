@@ -76,6 +76,13 @@ async def run_agentic_qa(url, task):
         raw_repaired = bridge.repair_test(generated_code, error_msg, cleaned_html, task)
         repaired_code = extract_code(raw_repaired)
 
+        print("\n" + "~"*50)
+        print("🤔 ПОЯСНЕННЯ ВІД ШІ (DIAGNOSIS):")
+        # Відрізаємо все, що йде до блоку з кодом
+        diagnosis = raw_repaired.split("```python")[0].strip()
+        print(diagnosis if diagnosis else "Діагноз відсутній у відповіді")
+        print("~"*50)
+
         if "DIAGNOSTIC_FAIL" in raw_repaired:
             print("\n" + "!"*50)
             print("🛑 ШІ-АГЕНТ ВИЯВИВ КРИТИЧНУ ПОМИЛКУ:")
@@ -113,5 +120,5 @@ async def run_agentic_qa(url, task):
 
 if __name__ == "__main__":
     target_url = "https://demo.playwright.dev/todomvc/"
-    user_task = "1. Add task 'Self-Healing'. 2. Try to click a button to submit, but if it's not there, find another way. 3. Verify task exists."
+    user_task = "1. Додай нову задачу під назвою 'Test-task'. 2. Натисни 'Enter' для підтвердження додавання задачі у список. 3. Перевір чи створена у першому пункті задача зʼявилась у списку."
     asyncio.run(run_agentic_qa(target_url, user_task))

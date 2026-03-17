@@ -10,20 +10,19 @@ class AgenticBridge:
             STRICT RULES:
             1. LANGUAGE: Use ONLY Python with 'playwright.async_api'.
             2. NO SELENIUM: Using Selenium is a critical failure.
-            3. NO CHAT: Return ONLY code blocks.
-            4. LINEAR LOGIC: Do NOT use internal if-statements or try-except to "handle" missing elements.
-            5. VISUALS & CRASH: Wrap the ENTIRE test logic in one global try-except block. 
-               In 'except': 
-               await page.screenshot(path='failure_screenshot.png')
-               raise  # IMPORTANT: You must re-raise the error so the test fails externally.
-            6. EXECUTION: Always end with:
-               import asyncio
-               asyncio.run(test_function_name())
+            3. NO CHAT in generation mode. BUT in REPAIR MODE, provide a brief 'DIAGNOSIS' strictly in UKRAINIAN before the code block.
+            4. LINEAR LOGIC: Do NOT use internal if-statements to "handle" missing elements.
+            5. VISUALS & CRASH: You may wrap the ENTIRE script body inside ONE global try-except to take a failure_screenshot.png, but NEVER wrap individual actions (like .click) in local try-except blocks.
+            6. EXECUTION: Always end with: import asyncio \n asyncio.run(test_function_name())
             7. BEST PRACTICES: Use 'page.locator()' instead of 'page.query_selector()'.
             8. ASYNC RULES: Never 'await' the page.locator() method. Only 'await' actions like .click(), .fill().
-            9. FORBIDDEN: Do NOT use 'try' or 'except' inside the test function EXCEPT for the global one for screenshot. Any internal 'try-except' is a failure of your task.
-            10. ANTI-HALLUCINATION: If the requested element (e.g., 'Login' button, 'Cart') is COMPLETELY missing from the HTML, DO NOT generate any Python code. Instead, output ONLY this exact phrase: "DIAGNOSTIC_FAIL: Element missing".
-            11. SELECTORS: Avoid using state classes like '.active', '.selected', or '.hidden' for clicking. Prefer using text content (e.g., text='Active') or attributes like href.
+            9. FORBIDDEN: NEVER use local 'try-except' inside the test for specific elements. If an element is missing, let the test crash.
+            10. ANTI-HALLUCINATION: If the requested element is COMPLETELY missing from the HTML context, DO NOT generate code. Output ONLY: "DIAGNOSTIC_FAIL: Element missing".
+            11. SELECTORS: Avoid state classes like '.active'. Prefer attributes or text content.
+            12. VISIBILITY: ALWAYS launch the browser in visible mode using: await p.chromium.launch(headless=False)
+            13. INPUT SUBMISSION: On sites like TodoMVC, there is NO 'Add' button. Use page.keyboard.press('Enter').
+            14. STRICT URL: NEVER change or invent URLs. Use EXACTLY the URL provided in the prompt context.
+            15. NO TRANSLATION: If the HTML is in English, do NOT search for translated Ukrainian text (e.g., 'Видалити все'). Search only for elements that physically exist in the provided HTML context.
             """
 
     def generate_test(self, html_context, user_task):
@@ -34,24 +33,25 @@ class AgenticBridge:
             model=self.model_name,
             system=self.system_prompt,
             prompt=prompt,
-            options={"temperature": 0.1}
+            options={"temperature": 0.1,
+                     "num_ctx": 32768 }
         )
         return response['response']
     
     def repair_test(self, original_code, error_message, current_html, user_task):
         # Об'єднуємо системні правила та специфіку ремонту
         repair_instructions = f"""
-            REPAIR MODE: The previous test failed. 
-            ORIGINAL CODE: {original_code}
-            ERROR MESSAGE: {error_message}
+            REPAIR MODE: Попередній тест впав. 
+            ОРИГІНАЛЬНИЙ КОД: {original_code}
+            ПОМИЛКА: {error_message}
             
-            ADDITIONAL REPAIR RULES:
-            1. USE THIS EXACT URL: 'https://demo.playwright.dev/todomvc/#/'
-            2. If you see that the element is missing in the provided HTML, use the ANTI-HALLUCINATION rule.
-            3. Fix the selector based on the HTML context provided below.
-            If the specific element mentioned in the task is missing, look for alternative ways to complete the user's goal using the available HTML elements (e.g., using Enter key instead of a button).
+            ЗАВДАННЯ:
+            1. Напиши 'DIAGNOSIS' українською мовою: що саме пішло не так?
+            2. Надай виправлений код.
+            3. Використовуй тільки ті елементи, які є в HTML нижче.
+            4. Якщо на сайті немає кнопки для відправки — використовуй клавішу Enter.
             
-            HTML CONTEXT:
+            HTML КОНТЕКСТ:
             {current_html}
         """
         
@@ -60,6 +60,7 @@ class AgenticBridge:
             model=self.model_name,
             system=self.system_prompt, # ТУТ ВАЖЛИВО: Передаємо основні 11 правил
             prompt=f"Task: {user_task}\n{repair_instructions}",
-            options={"temperature": 0.1}
-        )
+            options={"temperature": 0.1,
+                     "num_ctx": 32768}
+            )
         return response['response']
