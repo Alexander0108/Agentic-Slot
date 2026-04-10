@@ -6,6 +6,7 @@ venv/
 .env
 cleaned_context.txt
 screenshots/
+examples.txt
 
 # Playwright
 reports/

@@ -1,8 +1,10 @@
-import asyncio, re, os, subprocess
+import asyncio, re, os, subprocess, warnings
 from dotenv import load_dotenv
 from scraper import CortexScraper
 from bridge import CortexBridge
 from reporter import CortexReporter
+
+
 
 load_dotenv() # Завантажуємо змінні з .env
 
@@ -138,22 +140,37 @@ if __name__ == "__main__":
     print("🧠 ВІТАЄМО У CORTEX-SDET ORCHESTRATOR")
     print("="*50)
     print("Оберіть режим роботи ШІ:")
-    print("1. 💻 Локальний (Ollama - deepseek-r1:8b) - Безкоштовно, навантажує ПК")
-    print("2. ☁️ Хмарний (OpenAI - gpt-4o-mini) - Швидко, точно, потрібен API ключ")
+    print("1. 💻 Локальний (Ollama - qwen2.5:3b)")
+    print("2. ☁️ Хмарний OpenAI (GPT-4o-mini) - Потрібен OPENAI_API_KEY")
+    print("3. ☁️ Хмарний Google (gemini-3-flash-preview) - Потрібен GEMINI_API_KEY")
     
-    choice = input("Ваш вибір (1 або 2): ").strip()
+    choice = input("Ваш вибір (1, 2 або 3): ").strip()
     
+    # Логіка вибору провайдера та ініціалізації Bridge
     if choice == "2":
+        # Вибір OpenAI
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             print("❌ ПОМИЛКА: Не знайдено OPENAI_API_KEY у файлі .env")
             exit(1)
+        # Використовуємо gpt-4o-mini як стабільний та швидкий варіант
         bridge = CortexBridge(model_name="gpt-4o-mini", use_cloud=True, api_key=api_key)
+    
+    elif choice == "3":
+        # Вибір Google Gemini
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            print("❌ ПОМИЛКА: Не знайдено GEMINI_API_KEY у файлі .env")
+            exit(1)
+        # Вказуємо назву моделі для Gemini, яку ми додали у bridge.py
+        bridge = CortexBridge(model_name="gemini-3-flash-preview", use_cloud=True, api_key=api_key)
+    
     else:
-        bridge = CortexBridge(model_name="deepseek-r1:8b", use_cloud=False)
+        # Локальний режим за замовчуванням або вибір '1'
+        bridge = CortexBridge(model_name="qwen2.5:3b", use_cloud=False)
 
     target_url = input("\n🌐 Введіть URL сайту (напр. https://the-internet.herokuapp.com/login): ").strip()
-    user_task = input("📝 Введіть завдання для тесту: ").strip()
+    user_task = input("📝 Введіть промпт-вказівки щоб на їх основі ШІ створив тест: ").strip()
     
-    # Викликаємо нашу головну функцію
+    # Викликаємо нашу головну функцію без змін її логіки
     asyncio.run(run_agentic_qa(target_url, user_task, bridge))

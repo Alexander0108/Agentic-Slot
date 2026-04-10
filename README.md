@@ -1,67 +1,78 @@
 # 🧠 Cortex-SDET: Autonomous AI-Powered Testing Framework
+
 Cortex-SDET is a professional-grade QA Automation orchestrator that leverages Large Language Models (LLMs) to generate, execute, and self-heal E2E tests in real-time.
 
-## 🌟 Strategic Advantages
-- **Intent-Based Testing**: Describe business logic in plain English; the AI handles complex Playwright selectors.
-- **Hybrid Brain**: Seamlessly switch between OpenAI (GPT-4o) for high-speed cloud execution and Ollama (DeepSeek-R1) for local data privacy.
-- **Self-Healing Engine**: Automatically diagnoses failures and proposes code fixes based on real-time DOM analysis and stack traces.
-- **Rich Visual Reporting**: Generates comprehensive HTML reports with timestamps, error logs, and failure screenshots.
-- **Human-in-the-Loop (HITL)**: Prevents AI hallucinations by requiring engineer approval before applying self-healing code fixes.
+## 🌟 Strategic Advantages & ROI
+
+- **Intent-Based Testing**: Describe business logic in plain language; the AI engine dynamically resolves complex Playwright selectors, reducing test maintenance time.
+- **Resilience-First Architecture**: Integrated retry logic with exponential backoff gracefully handles Cloud API rate limits (HTTP 429) and server overloads (HTTP 503).
+- **Hybrid Brain**: Seamless switching between OpenAI (GPT-4o), Google (Gemini 3 Flash), and Local LLMs (Qwen 2.5) balances execution speed with strict data privacy requirements.
+- **Self-Healing Engine**: Automatically intercepts failures, diagnoses DOM state changes, and proposes code fixes (Human-in-the-Loop verified) to drastically cut down debugging hours.
+- **Actionable Reporting**: Generates Bootstrap-based HTML artifacts embedding execution logs, diagnostic insights, and failure screenshots for stakeholder visibility.
 
 ## 🛠 Tech Stack
-- **Core**: Python 3.9+
-- **Driver**: Playwright (Async API)
-- **Scraper**: Custom BeautifulSoup4 DOM Sanitizer
-- **Intelligence**: OpenAI API & Local LLMs (Ollama)
 
-## 🚀 Quick Start
-Clone the repo:
-```bash
-git clone https://github.com/your-username/Cortex-SDET.git
-cd Cortex-SDET
-```
+- **Core**: Python 3.9+, AsyncIO
+- **Browser Automation**: Playwright (Async API)
+- **DOM Processing**: Custom BeautifulSoup4 Sanitizer (Optimizes LLM token consumption)
+- **Intelligence**: Google GenAI SDK, OpenAI API, Ollama (Local Models)
 
-Local AI Setup (Optional but recommended):
-Install Ollama and pull the required local model:
-```bash
-ollama pull deepseek-r1:8b
-```
+## 📊 Demonstration & Provider Benchmarks
 
-Environment Setup:
-Install dependencies and Playwright browsers:
-```bash
-pip install -r requirements.txt
-playwright install
-```
+| Provider                    | Status    | Highlighted Capability                                                              |
+| :-------------------------- | :-------- | :---------------------------------------------------------------------------------- |
+| **OpenAI (GPT-4o-mini)**    | ✅ Passed | **High-Speed Precision:** Optimal for complex logic generation with lowest latency. |
+| **Google (Gemini 3 Flash)** | ✅ Passed | **Fault Tolerance:** Demonstrated auto-recovery during API 503 unavailability.      |
+| **Local (Qwen 2.5:3b)**     | ✅ Passed | **Zero-Cost Privacy:** 100% offline execution optimized for Apple Silicon (M2).     |
 
-Configure .env:
-Create a .env file in the root directory and add your OpenAI key if using Cloud mode:
-```env
-OPENAI_API_KEY=your_actual_key_here
-```
+### 1. Execution Flows (Multi-Provider Support)
 
-Run Orchestrator:
-```bash
-python3 main.py
-```
+**Standard Cloud Execution (OpenAI):**
+![GPT Flow](images/success_flow_GPT.png)
 
-## 🖼 Demonstration
-### 1. Happy Path: Precision Execution
-The agent successfully identifies stable selectors using custom DOM cleaning logic and executes the task flawlessly on the first attempt.
-![Success Flow](images/success_flow.png)
+**Resilience in Action (Gemini API Retry):**
+The orchestrator detects server overload and successfully applies retry logic without test failure.
+![Gemini Retry Flow](images/success_flow_gemini.png)
 
-### 2. Self-Healing: Automatic Recovery
-When a test fails (e.g., due to a missing element or UI change), the system captures a failure screenshot, analyzes the error, and proposes a repaired script for engineer approval.
-![Self-Healing Flow](images/healing_flow.png)
+**Secure Local Execution (Ollama):**
+Running completely offline, ensuring proprietary test data never leaves the machine.
+![Local Execution](images/success_flow_Ollama_qwen.png)
 
-## 📊 How it Works
-- **CortexScraper**: Captures and cleans the target website's HTML, removing "noise" to optimize LLM token usage.
-- **CortexBridge**: Translates user tasks into executable Python code following strict SDET best practices.
-- **CortexReporter**: Compiles execution data into professional HTML artifacts for stakeholders.
+### 2. Self-Healing Flow (The "Killer Feature")
 
-## 🛣 Future Roadmap
-1. Integration with CI/CD pipelines (GitHub Actions).
-2. Multi-page session persistence.
-3. Visual Regression testing module.
+When a locator changes or an element is missing, Cortex-SDET intercepts the crash, analyzes the error, and prompts the engineer with a repaired code snippet.
+![Self-Healing Mechanism](images/self_healing_flow.png)
 
-*Developed by Oleksandr Dermanskij - Junior QA Automation Engineer*
+### 3. Diagnostic HTML Reporting
+
+Each execution produces a clean, stakeholder-ready report. In case of failure, it provides clear diagnostic context (e.g., "Element missing") rather than raw stack traces.
+![HTML Report Preview](images/report_preview.png)
+
+## 🚀 Quick Start Guide
+
+### Local Environment Setup
+
+Install dependencies and Playwright browser binaries:
+`pip install -r requirements.txt`
+`playwright install`
+
+Create a `.env` file in the root directory:
+`OPENAI_API_KEY=your_openai_key`
+`GEMINI_API_KEY=your_gemini_key`
+
+### Local LLM Setup (Optional)
+
+Install Ollama and pull the recommended lightweight model:
+`ollama pull qwen2.5:3b`
+
+### Run Orchestrator
+
+`python3 main.py`
+
+## 🧠 Core Architecture
+
+- **CortexScraper**: Cleans raw HTML, stripping scripts and CSS to provide LLMs with a structured, token-efficient DOM tree.
+- **CortexBridge**: The brain that translates intent into executable Playwright Python code.
+- **CortexReporter**: Aggregates test metadata and constructs HTML artifacts.
+
+_Designed and engineered by Oleksandr Dermanskij - AQA Engineer & AI Automation Specialist_

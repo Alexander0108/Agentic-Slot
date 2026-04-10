@@ -1,14 +1,21 @@
 import ollama
 from openai import OpenAI
+from google import genai  # Нова бібліотека для Gemini 2.0
+import time
 
 class CortexBridge:
     def __init__(self, model_name="deepseek-r1:8b", use_cloud=False, api_key=None):
         self.model_name = model_name
         self.use_cloud = use_cloud
         
-        # Ініціалізуємо клієнт OpenAI, якщо вибрано хмару
+        # Ініціалізація клієнтів залежно від обраного провайдера
         if self.use_cloud and api_key:
-            self.client = OpenAI(api_key=api_key)
+            if "gemini" in self.model_name.lower():
+                # Ініціалізуємо специфічний клієнт Google Gemini
+                self.gemini_client = genai.Client(api_key=api_key)
+            else:
+                # Стандартний клієнт OpenAI (для GPT або Cloud DeepSeek)
+                self.client = OpenAI(api_key=api_key)
 
         self.system_prompt = """
             You are a Senior SDET (Software Development Engineer in Test).
@@ -52,18 +59,43 @@ class CortexBridge:
         """
 
     def _call_llm(self, prompt):
-        """Внутрішній метод для маршрутизації запитів (Хмара або Локально)"""
+        """Внутрішній метод для маршрутизації запитів (Хмара Gemini/OpenAI або Локально)"""
         if self.use_cloud:
-            response = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=[
-                    {"role": "system", "content": self.system_prompt},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.1
-            )
-            return response.choices[0].message.content
+            # ЛОГІКА ДЛЯ GOOGLE GEMINI
+            if "gemini" in self.model_name.lower():
+                # Впроваджуємо цикл повторних спроб для обходу лімітів (Quota management)
+                for attempt in range(3):
+                    try:
+                        response = self.gemini_client.models.generate_content(
+                            model=self.model_name,
+                            contents=[self.system_prompt, prompt]
+                        )
+                        # Очищуємо відповідь від можливих Markdown-тегів
+                        return response.text.replace("```python", "").replace("```", "").strip()
+                    except Exception as e:
+                        error_str = str(e)
+                        # Перевіряємо на вичерпання лімітів (429) АБО перевантаження сервера (503)
+                        if ("429" in error_str or "503" in error_str) and attempt < 2:
+                            wait_time = 40 #
+                            print(f"[!] Сервер Google перевантажений або ліміт вичерпано. Пауза {wait_time}с... (Спроба {attempt + 1}/3)")
+                            time.sleep(wait_time)
+                        else:
+                            # Якщо помилка не пов'язана з лімітами або спроби вичерпані — кидаємо виняток
+                            raise e
+            
+            # ЛОГІКА ДЛЯ OPENAI / DEEPSEEK CLOUD
+            else:
+                response = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "system", "content": self.system_prompt},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.1
+                )
+                return response.choices[0].message.content
         else:
+            # ЛОГІКА ДЛЯ ЛОКАЛЬНОГО OLLAMA
             response = ollama.generate(
                 model=self.model_name,
                 system=self.system_prompt,
